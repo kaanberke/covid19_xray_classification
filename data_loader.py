@@ -58,8 +58,7 @@ class DataLoader(object):
 
     @target_size.setter
     def target_size(self, value: Tuple[int, int]):
-        assert (isinstance(value, tuple) and
-                isinstance(value[0], int) and
+        assert (isinstance(value[0], int) and
                 isinstance(value[1], int)),\
             "Target size must be a tuple that contains two integer values."
         self._target_size = value
