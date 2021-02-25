@@ -5,8 +5,11 @@ from typing import Tuple
 
 
 class DataLoader(object):
-    def __init__(self, data_dir: str):
-        self._data_dir = data_dir
+    def __init__(self, data_dir: str, batch_size: int,
+                 target_size: Tuple[int, int]):
+        self.data_dir = data_dir
+        self.batch_size = batch_size
+        self.target_size = target_size
         self._df_total = None
 
     @property
@@ -15,9 +18,8 @@ class DataLoader(object):
 
     @data_dir.setter
     def data_dir(self, new_data_dir: str):
-        if not os.path.exists(new_data_dir):
-            print("Please enter an exist data directory.")
-            return
+        assert os.path.exists(
+            new_data_dir), "Please provide a valid data path.."
         self._data_dir = new_data_dir
 
     @data_dir.deleter
@@ -30,13 +32,43 @@ class DataLoader(object):
 
     @df_total.setter
     def df_total(self, value):
-        print("df_total cannot be set exclusively.")
+        assert isinstance(value, pd.DataFrame), "Please provide a DataFrame.."
+        self._df_total = value
 
     @df_total.deleter
     def df_total(self):
         print("df_total cannot be deleted.")
 
-    def _prepare_data(self):
+    @property
+    def batch_size(self) -> int:
+        return self._batch_size
+
+    @batch_size.setter
+    def batch_size(self, value):
+        assert isinstance(value, int), "Batch size must be an integer.."
+        self._batch_size = value
+
+    @batch_size.deleter
+    def batch_size(self):
+        print("Batch size value cannot be deleted.")
+
+    @property
+    def target_size(self) -> Tuple[int, int]:
+        return self._target_size
+
+    @target_size.setter
+    def target_size(self, value: Tuple[int, int]):
+        assert (isinstance(value, tuple) and
+                isinstance(value[0], int) and
+                isinstance(value[1], int)),\
+            "Target size must be a tuple that contains two integer values."
+        self._target_size = value
+
+    @target_size.deleter
+    def target_size(self):
+        print("Target size value cannot be deleted.")
+
+    def __prepare_data(self):
         df = pd.read_csv(os.path.join(self._data_dir, "metadata.csv"),
                          delimiter=',')
         no_finding_df = df[df.finding == "No Finding"].copy()
@@ -54,38 +86,45 @@ class DataLoader(object):
 
     def get_image_generator(
             self) -> Tuple[DataFrameIterator, DataFrameIterator]:
-        self._prepare_data()
+        self.__prepare_data()
         assert len(self._df_total) > 0, "Insufficient number of samples."
-        datagen = ImageDataGenerator(rescale=1. / 255.,
-                                     validation_split=0.25,
-                                     rotation_range=18,
-                                     brightness_range=[0.8, 1.0],
-                                     zoom_range=[0.05, 0.15])
-        train_generator = datagen.flow_from_dataframe(
+        data_gen_args = dict(featurewise_center=True,
+                             featurewise_std_normalization=True,
+                             rescale=1. / 255.,
+                             validation_split=0.25,
+                             rotation_range=18,
+                             brightness_range=[0.8, 1.0],
+                             zoom_range=[0.05, 0.15],
+                             width_shift_range=0.1,
+                             height_shift_range=0.1)
+        data_gen = ImageDataGenerator(**data_gen_args)
+        train_generator = data_gen.flow_from_dataframe(
             dataframe=self._df_total,
             directory=os.path.join(self._data_dir,
                                    self._df_total.loc[0, "folder"]),
             x_col="filename",
             y_col="finding",
             subset="training",
-            batch_size=32,
+            batch_size=self.batch_size,
             seed=42,
             shuffle=True,
             class_mode="categorical",
-            target_size=(224, 224))
+            color_mode="grayscale",
+            target_size=self.target_size)
 
-        valid_generator = datagen.flow_from_dataframe(
+        valid_generator = data_gen.flow_from_dataframe(
             dataframe=self._df_total,
             directory=os.path.join(self._data_dir,
                                    self._df_total.loc[0, "folder"]),
             x_col="filename",
             y_col="finding",
             subset="validation",
-            batch_size=32,
+            batch_size=self.batch_size,
             seed=42,
             shuffle=True,
             class_mode="categorical",
-            target_size=(224, 224))
+            color_mode="grayscale",
+            target_size=self.target_size)
 
         return train_generator, valid_generator
 
