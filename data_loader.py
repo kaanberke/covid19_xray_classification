@@ -88,9 +88,7 @@ class DataLoader(object):
             self) -> Tuple[DataFrameIterator, DataFrameIterator]:
         self.__prepare_data()
         assert len(self._df_total) > 0, "Insufficient number of samples."
-        data_gen_args = dict(featurewise_center=True,
-                             featurewise_std_normalization=True,
-                             rescale=1. / 255.,
+        data_gen_args = dict(rescale=1. / 255.,
                              validation_split=0.25,
                              rotation_range=18,
                              brightness_range=[0.8, 1.0],
