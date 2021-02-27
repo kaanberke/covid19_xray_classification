@@ -3,6 +3,14 @@ import os
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator, DataFrameIterator
 from typing import Tuple
 
+DATA_GEN_ARGS = dict(rescale=1. / 255.,
+                     validation_split=0.25,
+                     rotation_range=18,
+                     brightness_range=[0.8, 1.0],
+                     zoom_range=[0.05, 0.15],
+                     width_shift_range=0.1,
+                     height_shift_range=0.1)
+
 
 class DataLoader(object):
     def __init__(self, data_dir: str, batch_size: int,
@@ -11,6 +19,7 @@ class DataLoader(object):
         self.batch_size = batch_size
         self.target_size = target_size
         self._df_total = None
+        self.data_gen = ImageDataGenerator(**DATA_GEN_ARGS)
 
     @property
     def data_dir(self) -> str:
@@ -67,57 +76,21 @@ class DataLoader(object):
     def target_size(self):
         print("Target size value cannot be deleted.")
 
-    def __prepare_data(self):
-        df = pd.read_csv(os.path.join(self._data_dir, "metadata.csv"),
-                         delimiter=',')
-        no_finding_df = df[df.finding == "No Finding"].copy()
-        covid_df = df[df.finding == "Pneumonia/Viral/COVID-19"]
-        del df
-
-        for df, finding in zip([no_finding_df, covid_df], ["Normal", "Covid"]):
-            df.loc[:, ["finding"]] = finding
-            df.drop(df.columns.difference(["finding", "folder", "filename"]),
-                    1,
-                    inplace=True)
-
-        self._df_total = pd.concat([no_finding_df, covid_df])
-        self._df_total.reset_index(drop=True, inplace=True)
-
     def get_image_generator(
             self) -> Tuple[DataFrameIterator, DataFrameIterator]:
-        self.__prepare_data()
-        assert len(self._df_total) > 0, "Insufficient number of samples."
-        data_gen_args = dict(rescale=1. / 255.,
-                             validation_split=0.25,
-                             rotation_range=18,
-                             brightness_range=[0.8, 1.0],
-                             zoom_range=[0.05, 0.15],
-                             width_shift_range=0.1,
-                             height_shift_range=0.1)
-        data_gen = ImageDataGenerator(**data_gen_args)
-        train_generator = data_gen.flow_from_dataframe(
-            dataframe=self._df_total,
-            directory=os.path.join(self._data_dir,
-                                   self._df_total.loc[0, "folder"]),
-            x_col="filename",
-            y_col="finding",
+        train_generator = self.data_gen.flow_from_directory(
+            directory=self._data_dir,
             subset="training",
             batch_size=self.batch_size,
-            seed=42,
             shuffle=True,
             class_mode="categorical",
             color_mode="grayscale",
             target_size=self.target_size)
 
-        valid_generator = data_gen.flow_from_dataframe(
-            dataframe=self._df_total,
-            directory=os.path.join(self._data_dir,
-                                   self._df_total.loc[0, "folder"]),
-            x_col="filename",
-            y_col="finding",
+        valid_generator = self.data_gen.flow_from_directory(
+            directory=self._data_dir,
             subset="validation",
             batch_size=self.batch_size,
-            seed=42,
             shuffle=True,
             class_mode="categorical",
             color_mode="grayscale",
