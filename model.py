@@ -1,3 +1,6 @@
+from tensorflow.python.keras.callbacks import Callback
+from tensorflow.python.keras.layers import Dropout
+
 from data_loader import DataLoader
 import argparse
 import os
@@ -8,6 +11,21 @@ from tensorflow.keras.metrics import categorical_accuracy
 from tensorflow.keras.callbacks import (EarlyStopping, ModelCheckpoint,
                                         TensorBoard)
 from tensorflow.keras.optimizers import SGD
+from sklearn.utils.class_weight import compute_class_weight
+import numpy as np
+
+
+class TestCallback(Callback):
+    def __init__(self, test_data):
+        super().__init__()
+        self.test_data = test_data
+
+    def on_epoch_end(self, epoch, logs=None):
+        if logs is None:
+            logs = {}
+        loss, acc = self.model.evaluate(self.test_data, verbose=0)
+        print('\nTesting loss: {:.2f}, acc: {:.2f}\n'.format(loss, acc))
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -49,6 +67,7 @@ x = Conv2D(128, 3, activation="relu")(input_layer)
 x = Conv2D(64, 3, activation="relu")(x)
 x = MaxPooling2D((2, 2))(x)
 x = Conv2D(64, 3, activation="relu")(x)
+x = Dropout(0.5)(x)
 x = Conv2D(32, 3, activation="relu")(x)
 x = Flatten()(x)
 output_layer = Dense(2, activation="softmax")(x)
@@ -69,10 +88,12 @@ cb = [
     ModelCheckpoint(filepath=model_filepath, save_best_only=True),
     TensorBoard(log_dir="logs")
 ]
-history = model.fit(train_generator,
-                    validation_data=val_generator,
-                    steps_per_epoch=train_generator.n //
-                    train_generator.batch_size,
-                    validation_batch_size=1,
-                    validation_steps=val_generator.n,
-                    epochs=EPOCHS)
+history = model.fit(
+    train_generator,
+    validation_data=val_generator,
+    steps_per_epoch=train_generator.samples // train_generator.batch_size,
+    validation_steps=val_generator.samples // train_generator.batch_size,
+    epochs=EPOCHS,
+    verbose=1,
+    shuffle=True,
+    callbacks=[TestCallback(val_generator)])
