@@ -22,6 +22,10 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
+def get_token_user(token: str = Depends(oauth2_scheme)):
+    return token
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -35,6 +39,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = jwt.decode(token, constantUtil.SECRET_KEY, algorithms=[constantUtil.SIGNING_ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
+            raise credentials_exception
+
+        black_list_token = await crud.find_black_list_token(token)
+        if black_list_token:
             raise credentials_exception
 
         result = await crud.find_exist_user(username)
