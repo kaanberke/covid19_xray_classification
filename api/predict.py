@@ -1,5 +1,5 @@
 from tensorflow.keras.optimizers import SGD
-from model import create_model
+from .model import create_model
 from pathlib import Path
 import numpy as np
 from collections import Counter
