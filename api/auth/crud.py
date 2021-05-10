@@ -7,6 +7,11 @@ def find_exist_user(email: str):
     return database.fetch_one(query, values={"email": email})
 
 
+def find_black_list_token(token: str):
+    query = "SELECT * FROM blacklists WHERE token=:token"
+    return database.fetch_one(query, values={"token": token})
+
+
 def save_user(user: schema.UserCreate):
     query = "INSERT INTO users VALUES (nextval('user_id_seq'), :email, :password, :fullname, now() at time zone 'UTC', '1')"
     return database.execute(query, values={
@@ -37,3 +42,4 @@ def reset_password(new_hashed_password: str, email: str):
 def disable_reset_code(reset_password_token: str, email: str):
     query = "UPDATE codes SET status='0' WHERE status='1' AND reset_code=:reset_code AND email=:email"
     return database.execute(query, values={"reset_code": reset_password_token, "email": email})
+

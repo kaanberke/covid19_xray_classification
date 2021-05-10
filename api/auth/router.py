@@ -112,3 +112,4 @@ async def reset_password(request: schema.ResetPassword):
         "code": status.HTTP_200_OK,
         "message": "Password has been changed, successfully."
     }
+
