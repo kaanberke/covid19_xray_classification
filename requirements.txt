@@ -13,3 +13,6 @@ bcrypt
 python-multipart
 PyJWT
 fastapi-mail
+numpy
+opencv-python
+tensorflow
