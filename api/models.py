@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, DateTime, MetaData, Sequence
+from sqlalchemy import Table, Column, Integer, String, DateTime, MetaData, Sequence, LargeBinary
 
 metadata = MetaData()
 
@@ -19,4 +19,18 @@ codes = Table(
     Column("reset_code", String(50)),
     Column("status", String(1)),
     Column("expired_in", DateTime)
+)
+
+blacklists = Table(
+    "blacklists", metadata,
+    Column("token", String(250), unique=True),
+    Column("email", String(100)),
+)
+
+images = Table(
+    "images", metadata,
+    Column("id", Integer, Sequence("image_id_seq"), primary_key=True),
+    Column("image", LargeBinary),
+    Column("created_on", DateTime),
+    Column("uploaded_by", String(100))
 )
