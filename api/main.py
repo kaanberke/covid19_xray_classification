@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from api.utils.dbUtil import database
 from api.auth import router as auth_router
 from api.users import router as users_router
+from api.images import router as images_router
 
 
 app = FastAPI(
@@ -27,3 +28,4 @@ async def shutdown():
 
 app.include_router(auth_router.router, tags=["Auth"])
 app.include_router(users_router.router, tags=["Users"])
+app.include_router(images_router.router, tags=["Images"])
