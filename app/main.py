@@ -10,6 +10,11 @@ from time import time
 app = FastAPI()
 
 
+@app.get("/", tags=["index"])
+async def index():
+    return {"Hello world!"}
+
+
 @app.post("/image/", tags=["image"])
 async def create_image_file(file: UploadFile = File(...)):
     start = time()

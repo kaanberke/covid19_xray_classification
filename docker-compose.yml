@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  api:
+    build: .
+    container_name: covid19_finder
+    ports:
+      - 8000:80
+    volumes:
+      - ./api:/api
+    env_file:
+      - ./api/.env
