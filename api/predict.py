@@ -19,6 +19,7 @@ model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["acc"])
 
 def predict(models_folder: str, image: np.array):
     models_path = Path(models_folder)
+
     img = np.expand_dims(image, axis=0)
     predictions = []
     for model_path in models_path.glob("model_*.h5"):
