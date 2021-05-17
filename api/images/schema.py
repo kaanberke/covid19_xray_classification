@@ -12,3 +12,7 @@ class ImageBase(BaseModel):
 class ImageShow(ImageBase):
     created_on: Optional[datetime] = None
     uploaded_by: str
+
+
+class ImageResult(ImageShow):
+    result: str

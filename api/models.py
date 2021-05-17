@@ -31,6 +31,7 @@ images = Table(
     "images", metadata,
     Column("id", Integer, Sequence("image_id_seq"), primary_key=True),
     Column("image", LargeBinary),
+    Column("result", String(50)),
     Column("created_on", DateTime),
     Column("uploaded_by", String(100))
 )
