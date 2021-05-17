@@ -1,8 +1,9 @@
+from tensorflow.python.keras import Model
+from tensorflow.python.keras.applications.vgg16 import VGG16
 from tensorflow.python.keras.callbacks import Callback
 from tensorflow.keras.layers import (Input, Conv2D, Dense, Flatten,
                                      BatchNormalization, Activation, Dropout)
 from tensorflow.keras.activations import relu
-from tensorflow.keras.models import Sequential
 
 
 class TestCallback(Callback):
@@ -38,19 +39,34 @@ def default_conv(filters,
     ]
 
 
-layers = [
-    Input(shape=(224, 224, 1)),
-    *default_conv(128, (7, 7), strides=2, padding="SAME"),
-    *default_conv(64, (3, 3), strides=1, padding="SAME"),
-    *default_conv(32, (3, 3), strides=1, padding="SAME"),
-    Flatten(),
-    Dense(128, relu),
-    Dense(64, relu),
-    Dropout(0.5),
-    Dense(3, activation="softmax"),
-]
-
-
 def create_model():
-    model = Sequential(layers=layers)
+    layers = [
+        *default_conv(128, (3, 3), strides=1, padding="VALID"),
+        *default_conv(256, (3, 3), strides=1, padding="VALID"),
+
+        Flatten(),
+        Dense(32, relu),
+        Dropout(0.5),
+        Dense(3, activation="softmax"),
+
+    ]
+
+    input_layer = Input((224, 224, 3))
+    vgg16_model = VGG16(
+        include_top=False,
+        weights="imagenet",
+        input_tensor=input_layer,
+        classes=3,
+    )
+    for layer in vgg16_model.layers:
+        layer.trainable = False
+
+    model = None
+    for layer in layers:
+        if model is None:
+            model = layer(vgg16_model.layers[-1].output)
+        else:
+            model = layer(model)
+
+    model = Model(inputs=vgg16_model.inputs, outputs=model)
     return model

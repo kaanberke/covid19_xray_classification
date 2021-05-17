@@ -1,3 +1,4 @@
+from pathlib import Path
 from time import time
 from fastapi import APIRouter, Depends, UploadFile, File, status
 import numpy as np
@@ -15,19 +16,20 @@ router = APIRouter(
 
 @router.post("/image/predict")
 async def create_image_file(file: UploadFile = File(...), current_user: auth_schema.UserShow = Depends(jwtUtil.get_current_user)):
+    models_folder = Path("./api/models")
     start = time()
     if "image" not in file.content_type:
         raise status.HTTP_422_UNPROCESSABLE_ENTITY
 
     contents = await file.read()
-    await images_crud.save_image(contents, current_user.email)
-
     nparr = np.fromstring(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     img = cv2.resize(img, (224, 224))
-    img = np.reshape(img, (224, 224, 1))
-    result = predict("api/models/", img)
+    result = predict(models_folder, img)
     print(f"Took {time()-start:.2f} seconds..")
+
+    await images_crud.save_image(contents, current_user.email, LABELS[result])
+
     return {
         "filename": file.filename,
         "size":     img.shape,
